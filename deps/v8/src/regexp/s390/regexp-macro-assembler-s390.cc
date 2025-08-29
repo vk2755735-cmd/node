@@ -228,7 +228,7 @@ void RegExpMacroAssemblerS390::CheckCharacterLT(base::uc16 limit,
   BranchOrBacktrack(lt, on_less);
 }
 
-void RegExpMacroAssemblerS390::CheckGreedyLoop(Label* on_equal) {
+void RegExpMacroAssemblerS390::CheckFixedLengthLoop(Label* on_equal) {
   Label backtrack_non_equal;
   __ CmpS64(current_input_offset(), MemOperand(backtrack_stackpointer(), 0));
   __ bne(&backtrack_non_equal);
@@ -1347,7 +1347,7 @@ int RegExpMacroAssemblerS390::CheckStackGuardState(Address* return_address,
                                                    Address re_frame,
                                                    uintptr_t extra_space) {
   Tagged<InstructionStream> re_code =
-      Cast<InstructionStream>(Tagged<Object>(raw_code));
+      SbxCast<InstructionStream>(Tagged<Object>(raw_code));
   return NativeRegExpMacroAssembler::CheckStackGuardState(
       frame_entry<Isolate*>(re_frame, kIsolateOffset),
       frame_entry<intptr_t>(re_frame, kStartIndexOffset),

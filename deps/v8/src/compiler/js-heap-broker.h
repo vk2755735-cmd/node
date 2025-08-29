@@ -211,6 +211,9 @@ class V8_EXPORT_PRIVATE JSHeapBroker {
   ElementAccessFeedback const& ProcessFeedbackMapsForElementAccess(
       ZoneVector<MapRef>& maps, KeyedAccessMode const& keyed_mode,
       FeedbackSlotKind slot_kind);
+  ElementAccessFeedback const& ProcessFeedbackMapsForKeyedPropertyAccess(
+      ZoneVector<MapRef>& maps, KeyedAccessMode const& keyed_mode,
+      FeedbackSlotKind slot_kind);
 
   // Binary, comparison and for-in hints can be fully expressed via
   // an enum. Insufficient feedback is signaled by <Hint enum>::kNone.
@@ -496,7 +499,7 @@ class V8_EXPORT_PRIVATE JSHeapBroker {
 
   static constexpr uint32_t kMinimalRefsBucketCount = 8;
   static_assert(base::bits::IsPowerOfTwo(kMinimalRefsBucketCount));
-  static constexpr uint32_t kInitialRefsBucketCount = 1024;
+  static constexpr uint32_t kInitialRefsBucketCount = 16;
   static_assert(base::bits::IsPowerOfTwo(kInitialRefsBucketCount));
 };
 

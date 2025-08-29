@@ -54,9 +54,8 @@ Node* JSGraph::ConstantNoHole(ObjectRef ref, JSHeapBroker* broker) {
   CHECK(ref.IsSmi() || ref.IsHeapNumber() ||
         ref.AsHeapObject().GetHeapObjectType(broker).hole_type() ==
             HoleType::kNone);
-  if (IsThinString(*ref.object())) {
-    ref = MakeRefAssumeMemoryFence(broker,
-                                   Cast<ThinString>(*ref.object())->actual());
+  if (ref.IsString()) {
+    ref = ref.AsString().UnpackIfThin(broker);
   }
   return Constant(ref, broker);
 }
@@ -86,9 +85,9 @@ Node* JSGraph::Constant(ObjectRef ref, JSHeapBroker* broker) {
       return OptimizedOutConstant();
     case HoleType::kStaleRegister:
       return StaleRegisterConstant();
-    case HoleType::kUninitialized:
+    case HoleType::kUninitializedHole:
       return UninitializedConstant();
-    case HoleType::kException:
+    case HoleType::kExceptionHole:
     case HoleType::kTerminationException:
     case HoleType::kArgumentsMarker:
     case HoleType::kSelfReferenceMarker:
@@ -123,16 +122,23 @@ Node* JSGraph::ConstantMutableHeapNumber(HeapNumberRef ref,
 }
 
 Node* JSGraph::ConstantNoHole(double value) {
-  CHECK_NE(base::bit_cast<uint64_t>(value), kHoleNanInt64);
+  return ConstantNoHole(Float64::FromBits(base::bit_cast<uint64_t>(value)));
+}
+
+Node* JSGraph::ConstantNoHole(Float64 value) {
+  CHECK(!value.is_hole_nan());
   return ConstantMaybeHole(value);
 }
 
 Node* JSGraph::ConstantMaybeHole(double value) {
-  if (base::bit_cast<int64_t>(value) == base::bit_cast<int64_t>(0.0))
-    return ZeroConstant();
-  if (base::bit_cast<int64_t>(value) == base::bit_cast<int64_t>(1.0))
-    return OneConstant();
-  return NumberConstant(value);
+  return ConstantMaybeHole(Float64::FromBits(base::bit_cast<uint64_t>(value)));
+}
+
+Node* JSGraph::ConstantMaybeHole(Float64 value) {
+  if (value == Float64(0.0)) return ZeroConstant();
+  if (value == Float64(1.0)) return OneConstant();
+  // TODO(leszeks): Make NumberConstant store Float64 too.
+  return NumberConstant(value.get_scalar());
 }
 
 Node* JSGraph::NumberConstant(double value) {
